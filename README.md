@@ -14,10 +14,14 @@ IMPORTANT : Alpha version required linux x64.
 ```bash
 composer req arnolem/tailwindphp
 ```
+Add execution rights
+```bash
+chmod +x ./vendor/arnolem/tailwindphp/bin/*
+```
 
 ## Configuration
 
-1- create a tailwindcss config file 
+1- create a ``tailwind.config.js`` config file 
 
 ```javascript
 /** @type {import('tailwindcss').Config} */
