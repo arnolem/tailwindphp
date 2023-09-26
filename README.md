@@ -72,6 +72,36 @@ class CssController
 }
 ```
 
+Optional-Enable SCSS compilation
+
+
+```php
+<?php
+// src/Controller/CssController.php
+namespace App\Controller;
+
+use Arnolem\TailwindPhp\TailwindPhp;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+
+class CssController
+{
+    #[Route(path: 'style.css', name: 'css')]
+    public function index(): Response
+    {
+        TailwindPhp::enableScss(true);
+        
+        $scss = 'YOUR_SCSS_CONTENT with @apply ou theme() function';
+        
+        return new Response(
+            TailwindPhp::build($scss),
+            Response::HTTP_OK,
+            ['Content-Type' => 'text/css']
+        );
+    }
+}
+```
+
 ## Credits
 
 - Arnaud Lemercier is based on [Wixiweb](https://wixiweb.fr).
