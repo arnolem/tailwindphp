@@ -53,11 +53,24 @@ class TailwindPhp
 
         }
 
-        $tailwindcss->run();
+        $status = $tailwindcss->run();
 
-        $errors = $tailwindcss->getErrorOutput();
-        if($errors){
-            return $errors;
+        if($status !== 0){
+            $errors = 'TAILWINDPHP ERRORS : \A'.trim($tailwindcss->getErrorOutput());
+            return <<<CSS
+                body:before{
+                    white-space: pre;
+                    border: 5px solid red;
+                    padding: 16px;
+                    border-radius: 16px;
+                    font-family: Verdana, sans-serif;
+                    color: #333333;
+                    line-height: 130%;
+                    background: #ffffff;
+                    display: block;
+                    content: "$errors";
+                }
+            CSS;
         }
 
         // Delete tmpfile
