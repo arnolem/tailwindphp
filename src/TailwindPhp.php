@@ -4,6 +4,7 @@ namespace Arnolem\TailwindPhp;
 
 use ScssPhp\ScssPhp\Compiler;
 use Symfony\Component\Process\Process;
+use Throwable;
 
 class TailwindPhp
 {
@@ -20,11 +21,17 @@ class TailwindPhp
 
         $binFolder = dirname(__DIR__) . '/bin/';
 
+
         if ($css && self::$enableScss) {
-            $css          = self::protectTailwindFunctionForScss($css);
-            $scssCompiler = new Compiler();
-            $css          = $scssCompiler->compileString($css)->getCss();
-            $css          = self::unprotectTailwindFunctionForScss($css);
+            try {
+                $scssCompiler = new Compiler();
+
+                $css          = self::protectTailwindFunctionForScss($css);
+                $css          = $scssCompiler->compileString($css)->getCss();
+                $css          = self::unprotectTailwindFunctionForScss($css);
+            }catch (Throwable $e) {
+                return self::error($e->getMessage(), 'To resolve the issue, look for a SCSS syntax error.');
+            }
         }
 
         // Temp filepath
@@ -55,31 +62,45 @@ class TailwindPhp
 
         $status = $tailwindcss->run();
 
+
         if($status !== 0){
 
             $errors = trim($tailwindcss->getErrorOutput());
 
-            $solution = '';
             if (str_contains($errors, "Permission denied")) {
-
-                $pattern = '/\/srv\/www\/vhosts\/([^\/]+)\/[^\/]+\/vendor\//';
-                if (preg_match($pattern, $errors, $matches)) {
-                    $name = ucfirst(strtolower($matches[1]));
-                    $solution = "Hi $name 🌈! ";
-                }
-
-                $solution .= 'To solve this issue: `chmod +x ./vendor/arnolem/tailwindphp/bin/*`';
-
+                $solution = 'To solve this issue: `chmod +x ./vendor/arnolem/tailwindphp/bin/*`';
             }
 
-            $message = implode('\A', [
-                $solution,
-                '',
-                'TAILWINDPHP errors :',
-                $errors,
-            ]);
+            return self::error($errors, $solution ?? null);
 
-            return <<<CSS
+        }
+
+        // Delete tmpfile
+        unlink($input);
+
+        return $tailwindcss->getOutput();
+    }
+
+    private static function error($errors, $solution = null){
+
+        // Detect name (easter eggs)
+        //$pattern = '/\/srv\/www\/vhosts\/([^\/]+)\/[^\/]+\/vendor\//';
+
+        $pattern = '/(?:\w+\.)+([^.]+)\.([^.]+)\.intra\.wixiweb\.net$/';
+        $domain = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'];
+        if (preg_match($pattern, $domain, $matches)) {
+            $name = ucfirst(strtolower($matches[1]));
+            $solution = "Hi $name 🌈! ". $solution;
+        }
+
+        $message = implode('\A', [
+            $solution,
+            '',
+            'TAILWINDPHP errors :',
+            $errors,
+        ]);
+
+        return <<<CSS
                 body > *{
                     display: none;
                 }
@@ -96,12 +117,6 @@ class TailwindPhp
                     content: "$message";
                 }
             CSS;
-        }
-
-        // Delete tmpfile
-        unlink($input);
-
-        return $tailwindcss->getOutput();
     }
 
     private static function protectTailwindFunctionForScss($css): string
