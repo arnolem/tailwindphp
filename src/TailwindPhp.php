@@ -16,10 +16,14 @@ class TailwindPhp
         self::$enableScss = $enableScss;
     }
 
-    public static function build(?string $css = null): string
+    public static function build(?string $css = null, ?string $configFile = null): string
     {
 
         $binFolder = dirname(__DIR__) . '/bin/';
+
+        if(!$configFile){
+            $configFile = 'tailwind.config.js';
+        }
 
 
         if ($css && self::$enableScss) {
@@ -44,7 +48,7 @@ class TailwindPhp
                 $binFolder . '/tailwindcss-linux-x64',
                 '--no-autoprefixer', // for speed
                 '-c',
-                'tailwind.config.js',
+                $configFile,
                 '-i',
                 $input,
             ], '..');
@@ -55,7 +59,7 @@ class TailwindPhp
                 $binFolder . '/tailwindcss-linux-x64',
                 '--no-autoprefixer', // for speed
                 '-c',
-                'tailwind.config.js',
+                $configFile,
             ], '..');
 
         }
@@ -65,7 +69,8 @@ class TailwindPhp
 
         if($status !== 0){
 
-            $errors = trim($tailwindcss->getErrorOutput());
+            $output = str_replace("\n", "\\A", $tailwindcss->getErrorOutput());
+            $errors = trim(htmlspecialchars($output, ENT_COMPAT, 'UTF-8'));
 
             if (str_contains($errors, "Permission denied")) {
                 $solution = 'To solve this issue: `chmod +x ./vendor/arnolem/tailwindphp/bin/*`';
