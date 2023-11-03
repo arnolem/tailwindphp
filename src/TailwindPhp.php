@@ -56,8 +56,33 @@ class TailwindPhp
         $status = $tailwindcss->run();
 
         if($status !== 0){
-            $errors = 'TAILWINDPHP ERRORS : \A'.trim($tailwindcss->getErrorOutput());
+
+            $errors = trim($tailwindcss->getErrorOutput());
+
+            $solution = '';
+            if (str_contains($errors, "Permission denied")) {
+
+                $pattern = '/\/srv\/www\/vhosts\/([^\/]+)\/[^\/]+\/vendor\//';
+                if (preg_match($pattern, $errors, $matches)) {
+                    $name = ucfirst(strtolower($matches[1]));
+                    $solution = "Hi $name 🌈! ";
+                }
+
+                $solution .= 'To solve this issue: `chmod +x ./vendor/arnolem/tailwindphp/bin/*`';
+
+            }
+
+            $message = implode('\A', [
+                $solution,
+                '',
+                'TAILWINDPHP errors :',
+                $errors,
+            ]);
+
             return <<<CSS
+                body > *{
+                    display: none;
+                }
                 body:before{
                     white-space: pre;
                     border: 5px solid red;
@@ -68,7 +93,7 @@ class TailwindPhp
                     line-height: 130%;
                     background: #ffffff;
                     display: block;
-                    content: "$errors";
+                    content: "$message";
                 }
             CSS;
         }
