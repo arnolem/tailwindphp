@@ -55,6 +55,11 @@ class TailwindPhp
 
         $tailwindcss->run();
 
+        $errors = $tailwindcss->getErrorOutput();
+        if($errors){
+            return $errors;
+        }
+
         // Delete tmpfile
         unlink($input);
 
